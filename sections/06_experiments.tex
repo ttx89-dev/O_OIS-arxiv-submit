@@ -1,0 +1,141 @@
+\label{sec:experiments}
+
+This section reports what was measured, how to read the tables, and what each result means. All experiments were run on the source repositories. Every number was produced twice and the two runs agreed exactly.
+
+\section*{6.1 The test data}
+
+Three collections of graphs were used:
+
+\begin{itemize}
+\item \textbf{The golden corpus.} Seven reference graphs built into the POINTS test suite: an empty graph, one entity, one entity with one connection, four entities with three connections, a graph with facets and salience, a graph with denied and uncertain connections, and a six-entity ``mechanical watch'' example. Each entry has its exact packed bytes, its decoded structure, and the expected counts.
+\item \textbf{The capacity sweep.} Simple chain graphs from 1 to 460 entities. A chain is the simplest connected shape: each entity links to the previous one. This sweep finds the largest graph that fits in one glyph and shows how density changes with size.
+\item \textbf{The rich graph.} 300 entities, 299 connections, 30 facets, and 30 salience entries. This tests a graph that uses the full grammar, not only its simplest parts.
+\item \textbf{The generated corpus.} 30 graphs (5 sizes $\times$ 6 domains) for the statistical comparisons described in Section~\ref{sec:metric}.
+\end{itemize}
+
+\section*{6.2 Correctness: does the code do what it claims?}
+
+All 94 POINTS tests plus 42 subtests pass. In plain language, the suite checks:
+
+\begin{itemize}
+\item \textbf{Four past bugs (B1--B4)} whose fixes are now protected by tests that fail if the bug returns: entity tables must support lookup, literal properties must survive a round trip, literal edge targets must resolve to their values, and entities without short codes must not corrupt the glyph.
+\item \textbf{Multi-glyph chains}: a chain of 1,000 and of 5,000 entities, dense graphs, literal edges, varied relation kinds, and consistent graph identifiers.
+\item \textbf{Damage detection}: single bit flips, multiple bit flips, burst damage, bad headers, impossible counts, and adversarial bit patterns. Fourteen patterns in total.
+\end{itemize}
+
+MSCA passes 15 of its 15 checks, and its integrity check injects three defects---an overflow, a false self-certification, and decorative padding---all three of which are detected.
+
+The point of breaking code on purpose is simple: a test suite that stays green when the code is broken is worse than no suite at all, because it creates false confidence.
+
+\section*{6.3 Semantic capacity results}
+
+Table~\ref{tab:golden_sc} shows the seven example graphs. Read it as follows. The first columns count what is in each graph. The last columns show how many bits of meaning each format packs into each byte, and the ratio between them.
+
+\begin{table}[ht]
+\centering
+\caption{Semantic capacity on the seven example graphs. ``Ratio'' is POINTS density divided by JSON density. Values below 1.00 mean JSON is denser for that small graph.}
+\label{tab:golden_sc}
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Graph & Entities & Edges & Facets & Salience & SC (POINTS) & SC (JSON) & Ratio \\
+\midrule
+empty\_graph & 0 & 0 & 0 & 0 & 0.0000 & 0.0000 & --- \\
+single\_entity & 1 & 0 & 0 & 0 & 0.0024 & 0.3077 & 0.008$\times$ \\
+single\_edge & 2 & 1 & 0 & 0 & 0.0122 & 0.4329 & 0.028$\times$ \\
+multi\_edge & 4 & 3 & 0 & 0 & 0.0317 & 0.4643 & 0.068$\times$ \\
+with\_payload & 4 & 4 & 2 & 2 & 0.0440 & 0.3830 & 0.115$\times$ \\
+negated\_varied & 4 & 4 & 0 & 0 & 0.0391 & 0.4307 & 0.091$\times$ \\
+demo\_graph & 6 & 6 & 0 & 0 & 0.0586 & 0.4490 & 0.130$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For tiny graphs, JSON wins. That is expected: POINTS always spends 8,192 bytes, while JSON grows with the graph. As graphs grow, the picture reverses.
+
+\begin{table}[ht]
+\centering
+\caption{Capacity sweep: simple chain graphs from 1 to 460 entities. The crossover is near 50 entities. At the maximum that fits one glyph (460 entities), POINTS is 9.72 times as dense as JSON.}
+\label{tab:capacity_sweep}
+\begin{tabular}{rrrrr}
+\toprule
+Entities & SC (POINTS) & SC (JSON) & Ratio & POINTS denser? \\
+\midrule
+1 & 0.0024 & 0.3175 & 0.01$\times$ & No \\
+10 & 0.0903 & 0.4868 & 0.19$\times$ & No \\
+50 & 0.4810 & 0.4853 & 0.99$\times$ & No (crossover) \\
+100 & 0.9692 & 0.4851 & \textbf{2.00$\times$} & \textbf{Yes} \\
+200 & 1.9458 & 0.4806 & 4.05$\times$ & Yes \\
+300 & 2.9224 & 0.4791 & 6.10$\times$ & Yes \\
+400 & 3.8989 & 0.4784 & 8.15$\times$ & Yes \\
+\textbf{460 (max)} & \textbf{4.4849} & \textbf{0.4615} & \textbf{9.72$\times$} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{Rich graph: 300 entities, 299 connections, 30 facets, 30 salience entries. POINTS stores the same facts in 8\,KB where JSON needs 52.9\,KB.}
+\label{tab:rich_graph}
+\begin{tabular}{lrr}
+\toprule
+Metric & POINTS & JSON \\
+\midrule
+Semantic capacity (bits/byte) & \textbf{2.9956} & 0.4529 \\
+Ratio (POINTS / JSON) & \textbf{6.61$\times$} & --- \\
+Representation size & 8 KB & 52.9 KB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{How to read these results.} POINTS has a fixed overhead: header plus parity, inside a fixed 8,192 bytes. JSON has almost no overhead but repeats labels and punctuation for every fact, so it grows linearly with the graph. Once the graph is large enough to amortise the fixed overhead---at about 50 entities---POINTS overtakes JSON, and its advantage grows steadily. At the maximum that fits one glyph, POINTS holds 460 entities in 8\,KB; JSON needs 77.7\,KB for the same facts. That 9.7-fold size difference \textit{is} the density difference.
+
+\section*{6.4 Damage repair: can the code fix itself?}
+
+POINTS offers two parity modes. XOR parity is simple and detects many errors. Reed--Solomon parity (RS) can also \textit{correct} errors: up to 16 damaged symbols in each 223-byte block. With 32 blocks in a glyph, the theoretical maximum is 512 correctable symbols.
+
+\begin{table}[ht]
+\centering
+\caption{Reed--Solomon repair on a 100-entity graph. Every tested level of damage was fully repaired.}
+\label{tab:rs_recovery}
+\begin{tabular}{rrrr}
+\toprule
+Damaged bytes & Repaired? & Verified? & Errors corrected \\
+\midrule
+0 & Yes & Yes & 0 \\
+1 & Yes & Yes & 1 \\
+4 & Yes & Yes & 4 \\
+8 & Yes & Yes & 8 \\
+16 & Yes & Yes & 16 \\
+\textbf{32} & \textbf{Yes} & \textbf{Yes} & \textbf{32} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+In plain language: if a glyph is scratched, faded, or partly corrupted in sending, the parity information contains enough redundancy to reconstruct the original. Beyond the correction limit, the code detects the damage and reports failure honestly, rather than returning wrong data silently.
+
+\section*{6.5 Graphs larger than one glyph}
+
+Graphs that exceed one glyph are split using the sequence numbers in the header. Tested cases include a chain of 5,000 entities across multiple glyphs, a dense graph of 1,000 entities, and literal edges that cross glyph boundaries. All round trips pass. The cost is one header per extra glyph, which is small compared with the alternative of storing the graph in JSON.
+
+\section*{6.6 Adversarial testing}
+
+Table~\ref{tab:redteam} summarises the deliberate attacks. The design goal is that no attack produces \textit{silent} corruption: every attack is either detected (parity check fails) or degrades gracefully (the affected value is marked unresolved).
+
+\begin{table}[ht]
+\centering
+\caption{Adversarial patterns tested. All passed: no silent corruption occurred.}
+\label{tab:redteam}
+\begin{tabular}{lp{0.62\textwidth}}
+\toprule
+Category & Patterns tested \\
+\midrule
+Damage detection & Single bit flip, multiple bit flips, burst damage (content and header) \\
+Header integrity & Bad magic number, bad region offsets, impossible entity counts, zero count (valid) \\
+Boundary cases & Empty graph, single entity, single edge, full range of relation kinds \\
+Denial and certainty & Negated edge detected, ``whale is not a fish'', varied certainty levels \\
+Payload regions & Facet counts, label pool present, salience counts \\
+Example-set regression & All seven example glyphs decode, magic numbers checked, counts consistent \\
+Adversarial bit patterns & All-zero header, all-zero content, randomised header, maximum entity index \\
+\bottomrule
+\end{tabular}
+\end{table}

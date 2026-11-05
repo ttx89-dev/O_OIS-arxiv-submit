@@ -1,0 +1,77 @@
+\label{sec:agent_context}
+
+This section asks a practical question. \textit{Can the O-OIS grammar make a software agent's memory smaller and more honest without losing useful information?} The answer comes from MSCA, the agent memory system described in Section~\ref{sec:instantiation}.
+
+\section*{7.1 The problem with flat memory}
+
+Most agents keep one long, flat context window---a block of text that is sent again on every step. That window contains general instructions, reminders, and task details mixed together. Most of it does not change from one decision to the next, yet it is read every time. The result is the same semantic sparsity described in Section~\ref{sec:introduction}: many tokens, few new facts.
+
+\section*{7.2 How MSCA works, in plain language}
+
+MSCA divides memory into two layers.
+
+\begin{itemize}
+\item \textbf{Tier 1 (always present).} 621 tokens of rules that must be known \textit{before} any decision: how to choose the cheapest capable tool, how to batch calls, the fallback order, how to score options, and seven honesty rules. The budget is 640 tokens. The resident set measures 621, so it fits with room to spare.
+\item \textbf{Tier 2 (loaded only when needed).} Fifteen phase-specific sections plus topic sections. A section is loaded only when the current phase requires it, by the command \texttt{python -m msca.loader --phase N --tag T}. If loading fails, the system stops and reports the failure. It never proceeds with a partial section.
+\end{itemize}
+
+When options compete, MSCA scores them with explicit weights:
+
+\begin{equation}
+\text{Score} = 500 \cdot \Delta U + 200 \cdot \Delta \text{Gap} + 200 \cdot \Delta \text{Conf} + 100 \cdot \Delta \text{Drift}
+\end{equation}
+
+In plain language: usefulness is worth 500 points. The other three factors---closing a gap, confidence, and closeness to previous answers---are worth 200, 200, and 100. Usefulness alone equals the other three combined. \textit{A confident but useless answer cannot outvote a useful one.} This single rule prevents a common agent failure: choosing the answer that \textit{sounds} best over the answer that \textit{helps} most.
+
+Seven honesty invariants bind the agent at all times:
+
+\begin{enumerate}
+\item What was executed must be reported as executed.
+\item A green flag is not proof. The underlying data must be checked.
+\item No completion may be claimed without completion evidence.
+\item The source tier of every answer must be stated.
+\item An unresolved question is an acceptable answer.
+\item The agent may not certify its own quality.
+\item When pressure and honesty conflict, honesty wins and the conflict is stated.
+\end{enumerate}
+
+\section*{7.3 Measurements}
+
+Table~\ref{tab:tiered_context} compares three memory arrangements on the same task (designing a glyph codec). Each arrangement was encoded, the facts recoverable by the agent were counted, and the count was divided by the token-equivalent size.
+
+\begin{table}[ht]
+\centering
+\caption{Effective semantic capacity of three agent-memory arrangements on the same task. Tiered loading packs more recoverable meaning into the same token budget.}
+\label{tab:tiered_context}
+\begin{tabular}{llrr}
+\toprule
+Arrangement & Description & Est.\ SC (bits/byte) & Gain \\
+\midrule
+Flat (baseline) & 8k tokens, JSON-like prompt & 0.48 & 1$\times$ \\
+Tier 1 only & 621-token resident set & 1.20 & 2.5$\times$ \\
+Full tiered & 621 resident + on-demand sections & 2.88 & 6$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The gain comes from three mechanisms:
+
+\begin{enumerate}
+\item \textbf{Prose becomes structure.} The resident set uses O-OIS loading commands instead of English paragraphs. The same rules take fewer bytes.
+\item \textbf{Load only what the phase needs.} A phase that refines results loads gap-detection and workflow-checking sections; a phase that receives a task does not load them. Flat memory loads everything, always.
+\item \textbf{Usefulness is optimised, not volume.} The 500/200/200/100 weights make the agent spend its limited budget on the section with the highest expected usefulness, rather than on the longest section.
+\end{enumerate}
+
+All 15 automated checks pass. Three injected defects---a resident-budget overflow, a false self-certification, and decorative padding---were all detected. The recorded capacity matches the code exactly (commit e699268).
+
+\section*{7.4 Limits of this study}
+
+This study must be read with care:
+
+\begin{itemize}
+\item Effective SC was estimated from agent-reported fact counts, not from two independent human coders.
+\item Only one task domain was tested (glyph codec design). Generalisation to other domains is untested.
+\item The conversion between tokens and bytes is approximate (about 4 characters per token for the p50k\_base tokenizer).
+\end{itemize}
+
+The honest conclusion is narrow: on this task, with these estimators, tiered loading packs about six times more recoverable meaning into the same budget than flat memory. The mechanism is explained above; the generalisation is future work.

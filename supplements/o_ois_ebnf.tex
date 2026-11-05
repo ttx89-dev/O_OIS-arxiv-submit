@@ -1,0 +1,243 @@
+\section*{Appendix: Full O-OIS EBNF Grammar}
+\addcontentsline{toc}{section}{Appendix: Full O-OIS EBNF Grammar}
+
+This appendix gives the complete formal grammar of O-OIS in Extended Backus--Naur Form (EBNF). A reader who wants to reimplement O-OIS should start here. The main text (Section~\ref{sec:ontology}) explains the same grammar in plain language with examples. The grammar below is a specification, not a program: it says what is allowed, not how to write the code.
+
+\subsection*{A.1 Transport layer: content-addressed handles}
+
+Every graph and key is named by a short handle derived from its content. Two identical graphs always receive the same handle.
+
+\begin{verbatim}
+TransportHandle   ::= KeyHandle | GraphHandle | TextHandle
+KeyHandle         ::= "<K:" Hex4 ">"
+GraphHandle       ::= "<G:" Hex4 ">"
+TextHandle        ::= "<T:" Hex4 ">"
+Hex4              ::= HexDigit HexDigit HexDigit HexDigit
+HexDigit          ::= "0".."9" | "a".."f"
+
+ControlOp         ::= LoadOp | UnloadOp | NoRetainLoadOp | CondenseEvictOp
+                    | ListTypeOp | DiffOp | ProveOp
+LoadOp            ::= "LD" TransportHandle
+UnloadOp          ::= "UNL" TransportHandle
+NoRetainLoadOp    ::= "NDL" TransportHandle
+CondenseEvictOp   ::= "RSP" TransportHandle
+ListTypeOp        ::= "LST" TypeName
+DiffOp            ::= "GAP" GraphHandle
+ProveOp           ::= "PRV" GraphHandle GraphHandle
+
+TypeName          ::= "entity" | "edge" | "facet" | "salience"
+                    | "reification" | "literal"
+\end{verbatim}
+
+\textit{Plain-language note.} The handle is the first 16 bits of a SHA-256 hash of the content. At $10^4$ objects, the probability of a collision is about $10^{-5}$. Handles remain valid across program restarts. Together with parity and a checksum, they form error-correction transport: the data plus the extra information needed to detect and repair damage.
+
+\subsection*{A.2 Core graph grammar}
+
+\begin{verbatim}
+Graph             ::= Entity* Edge* Facet* Salience* Reification*
+Entity            ::= "entity" EntityId Label
+                    CanonicalId? PropertiesLiteral? FacetRef* SalienceRef*
+EntityId          ::= Integer (0-indexed, implicit from position)
+Label             ::= UTF8String (non-empty, max 255 bytes)
+CanonicalId       ::= "@" UTF8String (max 8 bytes, padded/truncated)
+PropertiesLiteral ::= "{" PropEntry* "}"
+PropEntry         ::= Key ":" LiteralValue
+Key               ::= UTF8String
+LiteralValue      ::= BoolLit | IntLit | FloatLit | StringLit
+BoolLit           ::= "true" | "false"
+IntLit            ::= ["-"] Digit+
+FloatLit          ::= ["-"] Digit+ "." Digit+ ("e" ["-"] Digit+)?
+StringLit         ::= "\"" UTF8String "\""
+FacetRef          ::= "#facet" FacetId
+SalienceRef       ::= "#sal" SalienceId
+
+Edge              ::= "edge" EdgeId Source Target Relation
+                    Subtype? Confidence Polarity Reified?
+EdgeId            ::= Integer (0-indexed)
+Source            ::= EntityId
+Target            ::= EntityId | LiteralValue
+Relation          ::= RelationType
+RelationType      ::= "EQL" | "ISA" | "INS" | "PAR" | "CST" | "PRC" | "PRE"
+                    | "LOC" | "USF" | "ANT" | "PRP" | "OTH"
+Subtype           ::= MeronymySubtype | AssociativeLabel
+MeronymySubtype   ::= "CIN" | "MEM" | "POR" | "STU" | "FEA" | "PLA"
+AssociativeLabel  ::= "HAS_PROPERTY" | "USED_FOR" | "LOCATED_IN"
+                    | "PART_OF" | "IS_A" | "OTHER"
+Confidence        ::= "CERTAIN" | "LIKELY" | "PLAUSIBLE" | "UNKNOWN"
+                    (maps to CNF 0..3)
+Polarity          ::= "1" | "0"  (1 = asserted, 0 = negated)
+Reified           ::= "reified" | epsilon
+
+Facet             ::= "facet" FacetId DimensionId+
+FacetId           ::= Integer
+DimensionId       ::= Integer
+
+Salience          ::= "salience" EntityId Source Scalar
+Source            ::= "EMPIRICAL" | "DESIGNER_INTENDED" | "INFERRED" | "DEFAULT"
+Scalar            ::= Float (0.0 .. 1.0)
+
+Reification       ::= "reify" EdgeId
+\end{verbatim}
+
+\subsection*{A.3 Relation algebra}
+
+\textit{Primary relations.} Read the table with two questions: can the relation be read backwards (symmetric)? Does it chain (transitive)?
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llccc}
+\toprule
+Symbol & Name & Symmetric & Transitive & Meaning \\
+\midrule
+EQL & Equivalence & Yes & Yes & Same referent \\
+ISA & Is-A & No & Yes & Subsumption (A ISA B) \\
+INS & Instance-Of & No & No & Instantiation (a INS A) \\
+PAR & Part-Of & No & Yes & Mereological parthood \\
+CST & Constitutes & No & Yes & Inverse of PAR \\
+PRC & Produced-By & No & Yes & Causal / production dependency \\
+PRE & Precedes & No & Yes & Temporal / logical precedence \\
+LOC & Located-In & No & Yes & Spatial / topical containment \\
+USF & Used-For & No & No & Teleological function \\
+ANT & Antonym & Yes & No & Semantic opposition \\
+PRP & Has-Property & No & No & Attribute attachment \\
+OTH & Other & Yes & No & Fallback for unclassified \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{Meronymy subtypes} refine PAR and CST. Each one says \textit{how} a part belongs to a whole:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Symbol & Expansion & Meaning \\
+\midrule
+CIN & Component-Integral & Essential functional component \\
+MEM & Member-Collection & Interchangeable member of a collection \\
+POR & Portion-Mass & Measured portion of a mass or substance \\
+STU & Stuff-Object & Material constituting an object \\
+FEA & Feature-Activity & Feature or activity of a process \\
+PLA & Place-Area & Sub-area within a larger area \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{Associative labels} are plain-language refinements.\\ HAS\_PROPERTY refines PRP; USED\_FOR refines USF;\\ LOCATED\_IN refines LOC; PART\_OF refines PAR;\\ IS\_A refines ISA; and OTHER is the fallback.
+
+\subsection*{A.4 Epistemic layer}
+
+\begin{verbatim}
+EpistemicTag      ::= NegTag | ConfidenceTag | SalienceTag | FacetTag
+NegTag            ::= "NEG" ("0" | "1")           -- 0 = negated, 1 = asserted
+ConfidenceTag     ::= "CNF" ("0" | "1" | "2" | "3")
+                    -- 0=certain, 1=likely, 2=plausible, 3=unknown
+SalienceTag       ::= "SAL" Float                 -- 0.0 .. 1.0
+FacetTag          ::= "FAC" FacetId
+ReificationTag    ::= "REI" EdgeId                -- reify edge as node
+\end{verbatim}
+
+Rules: NEG\,=\,0 on an ISA edge means classical negation (``A is not a B''). CNF\,=\,0 means deductively certain; CNF\,=\,3 means unknown. SAL at or above 0.5 means ``include by default.'' FAC partitions the graph into overlapping points of view. REI lets an edge become a node, so that statements can be made about statements.
+
+\subsection*{A.5 Tiered loading control}
+
+\begin{verbatim}
+LoadPolicy        ::= ResidentPolicy | PointedPolicy | CondensedPolicy
+ResidentPolicy    ::= "LD" GraphHandle "resident"  -- stays in Tier-1 context
+PointedPolicy     ::= "NDL" GraphHandle "pointed"
+                    -- load on demand, evict after use
+CondensedPolicy   ::= "RSP" GraphHandle "condensed"
+                    -- summary only (stats + handles)
+
+LoadDecision      ::= "load" GraphHandle LoadPolicy
+EvictDecision     ::= "unload" GraphHandle
+GapDecision       ::= "gap" GraphHandle ResidentHandle  -- diff vs resident
+ProveDecision     ::= "prove" GraphHandle GraphHandle
+                    -- structural equivalence
+\end{verbatim}
+
+\textit{Invariant (MSCA).} The Tier-1 resident budget is at most 640 tokens (p50k\_base). Tier-2 sections are loaded by phase and tag with \texttt{python -m msca.loader --phase N --tag T}. A non-zero exit means failure: never continue from a partial load.
+
+\subsection*{A.6 Encoding grammar (POINTS glyph)}
+
+\begin{verbatim}
+Glyph             ::= Header Content Parity
+Header            ::= Magic Version Sequence ParityInfo EntityInfo EdgeInfo
+                    PayloadInfo GraphId RegionOffsets
+Magic             ::= "PTS\x01" (4 bytes)
+Version           ::= UInt8 (1)
+Sequence          ::= SeqId SeqIndex SeqTotal
+SeqId             ::= UInt32
+SeqIndex          ::= UInt16
+SeqTotal          ::= UInt16
+ParityInfo        ::= ParityRatio ParityAlgoId
+ParityRatio       ::= UInt8 (0..100)
+ParityAlgoId      ::= UInt8 (1=XOR, 2=RS)
+EntityInfo        ::= EntityCount EntityIndexBits ConfidenceBits
+EntityCount       ::= UInt16 (0..65535)
+EntityIndexBits   ::= UInt8 (1..16)
+ConfidenceBits    ::= UInt8 (2 fixed)
+EdgeInfo          ::= EdgeCount
+EdgeCount         ::= UInt16 (0..65535)
+PayloadInfo       ::= FacetCount SalienceCount LiteralPoolBytes
+GraphId           ::= UInt32
+RegionOffsets     ::= Offset[7] (UInt24 each)
+
+Content           ::= EntityTable EdgeTable Salience Facets Reification
+                    LabelPool LiteralPool
+EntityTable       ::= EntityRecord* LabelPool
+EntityRecord      ::= Flags CanonicalId? LabelOffset LabelLen PropertiesLiteral?
+Flags             ::= UInt8 (bit0=label, bit1=canonical_id,
+                             bit2=properties_literal)
+CanonicalId       ::= Bytes[8] (UTF-8, padded)
+LabelOffset       ::= UInt16
+LabelLen          ::= UInt8
+PropertiesLiteral ::= PropCount (KeyLen Key LiteralValueBytes)*
+PropCount         ::= UInt8
+
+EdgeTable         ::= EdgeRecord*
+EdgeRecord        ::= CompactEdge | FullEdge
+CompactEdge       ::= "0" Source(EIB) "0" Target(EIB)
+                    RelationType(3) Polarity(1)
+FullEdge          ::= "1" Source(EIB) TargetKind TargetBits RelationType(3)
+                    Subtype(3) Confidence(2) Polarity(1) Reified(1)
+TargetKind        ::= "0" (entity) | "1" (literal)
+TargetBits        ::= max(EIB, 16)
+
+Parity            ::= XORParity | RSParity
+XORParity         ::= Bytes[parity_size] (ratio% of content)
+RSParity          ::= RS(255,223) parity bytes (32 bytes per 223-byte block)
+\end{verbatim}
+
+\textit{Constants.} GLYPH\_SIZE = 8192 bytes; HEADER\_SIZE = 42 bytes; CONTENT\_SIZE = 6920 bytes; default parity ratio 15\% (XOR) or 32 parity bytes per block (RS). Maximum entities per glyph: about 460 in a simple chain, about 300 with rich edges. Larger graphs use multi-glyph chaining via sequence numbers.
+
+\subsection*{A.7 Semantic capacity metric (formal)}
+
+\begin{verbatim}
+SC(R, G) = |sem(G)| / |R|  (bits-of-meaning per byte)
+
+|sem(G)| = sum over p in propositions(G) of w(p) * bits(p)
+  w(p) = 1 (uniform weight)
+  bits(p) = 10 (conservative estimate per atomic proposition)
+
+propositions(G) = { entity_label(e) | e in E }
+                union { entity_cid(e) | e in E and cid(e) != empty }
+                union { edge(e) | e in Edges }  -- 6-field tuple
+                union { facet(f) | f in Facets }
+                union { salience(s) | s in Salience }
+\end{verbatim}
+
+\textit{Baselines.} Compact JSON, Markdown, YAML, token stream (BPE), and random bytes. \textit{Corruption conditions:} clean round trip; RS repair at 1, 4, 8, 16, and 32 damaged bytes per 223-byte block; truncation to 10\%, 25\%, and 50\%; adversarial reordering, synonym substitution, and removal of epistemic tags.
+
+\subsection*{A.8 Optimality scope (honest)}
+
+O-OIS is a regulative ideal (in Kant's sense), not a provable global optimum. The claims made are: structural completeness (every known failure mode of predecessor codecs is addressed, patches B1--B4); comparative design quality (the best characterised alternative for maximising semantic capacity under fixed-size, error-correcting, human-checkable constraints, as of November 2026); and indexicality (every claim is bounded by context, date, and knowledge horizon, expiring 22 December 2026).
+
+\subsection*{A.9 Disclosure block (per MSCA)}
+
+\begin{verbatim}
+LOADED     <G:points> <G:msca> <G:65536>
+NOT LOADED (all further handles: outside this paper's scope)
+\end{verbatim}
+
+\textit{Verification.} This grammar was checked against the POINTS example set (7 entries), a capacity sweep (1 to 460 entities), and a Reed--Solomon damage test (0 to 32 damaged bytes).

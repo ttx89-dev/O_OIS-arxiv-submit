@@ -1,0 +1,135 @@
+\label{sec:ontology}
+
+This section teaches the shared grammar, called \textbf{O-OIS} (Ontology of Optimal Information Structure). The full formal rules are in Appendix~\ref{app:ebnf}. Here we explain every idea in plain language, with examples, so that a reader with no prior knowledge can follow.
+
+The grammar has six layers. Think of them as six questions that any well-structured piece of information must answer:
+
+\begin{enumerate}
+\item What things are we talking about? (\textit{entities})
+\item How are they connected? (\textit{relations})
+\item How do parts belong to wholes? (\textit{meronymy})
+\item How sure are we, and how important is each claim? (\textit{epistemic tags})
+\item What point of view are we taking? (\textit{facets and salience})
+\item When should information be kept active, loaded, or stored? (\textit{loading controls})
+\end{enumerate}
+
+We take each layer in turn.
+
+\section*{3.1 The things: entities}
+
+An \textbf{entity} is one thing in the world of the graph: a sparrow, a city, a material, a person. Every entity has:
+
+\begin{itemize}
+\item a \textbf{label}: its human-readable name, such as ``Sparrow'' or ``Eiffel Tower'';
+\item an optional \textbf{canonical identifier}: a short code, at most 8 bytes, such as \texttt{@passer}. This is like a nickname used by machines. It saves space when the same entity is mentioned many times;
+\item optional \textbf{properties}: simple facts about the entity, written as key--value pairs. For example, \texttt{height: 301} or \texttt{country: "France"}. Values may be true/false, a whole number, a floating-point number, or a text string.
+\end{itemize}
+
+Entities are numbered from zero. The number is simply the order in which they appear. This is important: in the compact code, an entity is usually mentioned by its small number, not by its long name. That one choice saves many bytes.
+
+\section*{3.2 The connections: relations}
+
+An \textbf{edge} (a connection) links one entity to another entity, or to a value. For example, an edge can say ``Sparrow \textit{is a} Bird'' or ``Paris \textit{is located in} France.''
+
+O-OIS allows twelve kinds of connection, called \textbf{primary relations}. Table~\ref{tab:primary_relations} lists them. Two columns matter most: \textit{symmetric} means the connection reads the same backwards (if A equals B, then B equals A); \textit{transitive} means it chains (if A is part of B and B is part of C, then A is part of C).
+
+\begin{table}[ht]
+\caption{The twelve primary relations. Example readings help the reader understand each one.}
+\label{tab:primary_relations}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lllcl}
+\toprule
+Symbol & Name & Symmetric? & Transitive? & Plain-language example \\
+\midrule
+EQL & Equivalence & Yes & Yes & ``Water'' and ``H2O'' are the same thing \\
+ISA & Is-A (subsumption) & No & Yes & ``Sparrow'' is a kind of ``Bird'' \\
+INS & Instance-Of & No & No & ``Tweety'' is one instance of ``Sparrow'' \\
+PAR & Part-Of & No & Yes & ``Engine'' is part of ``Car'' \\
+CST & Constitutes & No & Yes & ``Steel'' constitutes the ``Bridge'' \\
+PRC & Produced-By & No & Yes & ``Bread'' is produced by ``Baking'' \\
+PRE & Precedes & No & Yes & ``Breakfast'' precedes ``Lunch'' \\
+LOC & Located-In & No & Yes & ``Paris'' is located in ``France'' \\
+USF & Used-For & No & No & ``Umbrella'' is used against rain \\
+ANT & Antonym / Opposition & Yes & No & ``Hot'' is opposite to ``Cold'' \\
+PRP & Has-Property & No & No & ``Paris'' has property \texttt{height: 301} \\
+OTH & Other & Yes & No & Any connection not yet classified \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A connection is stored as six small fields: where it starts, where it ends, which relation it is, a subtype (explained next), how certain it is, and whether it is affirmed or denied. Section~\ref{sec:epistemic} explains the last two fields.
+
+\section*{3.3 Parts and wholes: meronymy}
+
+\textbf{Meronymy} is the study of part--whole relationships. It answers: \textit{in what way} is this a part? The answer matters, because different kinds of parts behave differently.
+
+\begin{itemize}
+\item \textbf{CIN (Component-Integral)}: an essential component. \textit{Example:} the engine is an essential component of a car. Remove it, and the car is no longer a car.
+\item \textbf{MEM (Member-Collection)}: one interchangeable member of a collection. \textit{Example:} one book in a library, one sheep in a flock. Any similar member could replace it.
+\item \textbf{POR (Portion-Mass)}: a measured portion of a mass. \textit{Example:} 500\,g of flour taken from a 1\,kg bag. It is counted by weight, not by identity.
+\item \textbf{STU (Stuff-Object)}: the material that makes an object. \textit{Example:} the steel that constitutes a bridge. The stuff and the object are linked, but they are different ideas.
+\item \textbf{FEA (Feature-Activity)}: a feature or activity of a process. \textit{Example:} ``heating'' is a feature of a cooking process.
+\item \textbf{PLA (Place-Area)}: a sub-place inside a larger place. \textit{Example:} a neighbourhood inside a city.
+\end{itemize}
+
+These six subtypes refine the general \textit{Part-Of} (PAR) and \textit{Constitutes} (CST) relations. When a connection is a part--whole connection, one of these six labels says exactly how.
+
+\textit{Associative labels} are a smaller set of plain-language helpers. They refine \textit{Used-For}, \textit{Has-Property}, and \textit{Located-In}. Their codes are HAS\_PROPERTY, USED\_FOR, LOCATED\_IN, PART\_OF, IS\_A, and OTHER. They let writers use familiar words while the code keeps the precise relation underneath.
+
+\section*{3.4 Certainty, denial, and importance: epistemic tags}
+\label{sec:epistemic}
+
+A fact without a certainty mark is ambiguous. Epistemic tags---from the Greek \textit{episteme}, meaning knowledge---answer three questions for every connection: \textit{Is it affirmed or denied? How sure are we? How much does it matter now?}
+
+\begin{itemize}
+\item \textbf{NEG (polarity).} Either 1 (the claim is affirmed) or 0 (the claim is denied). \textit{Example:} ``Whale ISA Fish'' with NEG\,=\,0 means ``A whale is \textit{not} a fish.'' Denial is stored in the data, not added later in prose.
+\item \textbf{CNF (confidence).} Four levels: 0 = certain, 1 = likely, 2 = plausible, 3 = unknown. \textit{Example:} a measured fact is certain; a textbook generalisation is likely; a guess is plausible; a missing value is unknown. In the code this takes only 2 bits.
+\item \textbf{SAL (salience).} A number from 0.0 to 1.0 that says how important the entity is \textit{right now}. By convention, 0.5 or above means ``include this by default.'' Salience can come from measurement, from the designer's intent, from inference, or take a default value.
+\item \textbf{FAC (facet).} A marker that says which point of view a fact belongs to. For example, facet 1 might be ``historical'' and facet 2 might be ``geographical.'' One fact can belong to more than one facet.
+\item \textbf{REI (reification).} This allows a connection itself to become a thing that other connections can talk about. \textit{Example:} instead of only saying ``A caused B,'' we can also say ``The claim that A caused B is uncertain.'' Without reification, we could not express that second sentence.
+\end{itemize}
+
+These five tags are the reason O-OIS is called \textit{epistemic}. They make uncertainty and importance part of the data, rather than leaving them to be guessed from surrounding text.
+
+\section*{3.5 Points of view: facets and salience}
+
+Two entities may be described from several points of view. A \textbf{facet} is one such point of view, identified by a number and a list of dimension numbers. A \textbf{salience} entry says how important one entity is, and where that judgement came from.
+
+Example: Paris may have a historical facet and a geographical facet. Its salience may be 0.95 from measurement, while the Eiffel Tower's salience may be 0.80 because the designer intended it to stand out. Both numbers are stored, with their sources, so a reader can judge them.
+
+\section*{3.6 Keeping information close or far: loading controls}
+
+Information that is always needed should be kept close. Information that is rarely needed should be stored far away and loaded only when required. O-OIS makes this decision explicit with seven small commands:
+
+\begin{itemize}
+\item \texttt{LD} (load): bring a graph into active memory and keep it there.
+\item \texttt{UNL} (unload): remove a graph from active memory.
+\item \texttt{NDL} (load with no retain): load a graph for one use, then remove it.
+\item \texttt{RSP} (condense and evict): keep only a short summary---counts and handles---not the full graph.
+\item \texttt{LST} (list): list all handles of one kind.
+\item \texttt{GAP} (difference): report what differs from what is currently active.
+\item \texttt{PRV} (prove): check that two graphs are structurally the same.
+\end{itemize}
+
+Every graph also has a short \textbf{handle}, such as \texttt{<G:4f2a>}. The four hexadecimal digits are the first 16 bits of a SHA-256 hash of the content. The same content always gives the same handle, so identical graphs are recognised immediately and are never stored twice. Handles stay valid across program restarts. Together with parity and a checksum, this forms \textit{error-correction transport}: data plus the extra information needed to detect and repair damage.
+
+These controls are not abstract. In the MSCA agent system (Section~\ref{sec:instantiation}), they are the actual rules that decide what a software agent keeps in its short-term memory. The always-active set is limited to 640 tokens, and the loader refuses to continue if a required section cannot be loaded. That strictness is deliberate: it prevents the agent from pretending to know something it has not loaded.
+
+\section*{3.7 How O-OIS is written as bytes: the glyph layout}
+
+The POINTS glyph is one concrete way to write O-OIS as bytes. Every glyph is exactly 8,192 bytes, divided into three parts:
+
+\begin{itemize}
+\item \textbf{Header (42 bytes).} A magic number so software can recognise a glyph, a version number, a sequence number (for graphs split across several glyphs), parity settings, counts of entities and edges, the number of bits used to index entities, and seven offsets that say where each region begins.
+\item \textbf{Content (6,920 bytes).} The entity table, the edge table, salience entries, facets, reifications, and two pools: one for label text and one for literal values. Entities are stored as short records. Edges are stored as bit-packed fields: a common case (no subtype, certain, not reified) uses a short ``compact'' form; all other cases use a ``full'' form.
+\item \textbf{Parity (the remainder, about 1,230 bytes).} Either a simple XOR checksum (15\% of content size) that can detect many errors, or a Reed--Solomon (255,223) code~\cite{reed1960polynomial} that can \textit{correct} up to 16 damaged symbols in each 223-byte block. Section~\ref{sec:experiments} reports the measured correction performance.
+\end{itemize}
+
+A single glyph holds at most about 460 entities in a simple chain, or about 300 entities when edges are rich. Larger graphs are split across several glyphs using the sequence numbers in the header. This is called \textit{multi-glyph chaining}.
+
+\section*{3.8 How O-OIS relates to the whole paper}
+
+O-OIS is the shared language of the paper. POINTS writes it as bytes. The 65536 collection writes it as pictures. MSCA uses its loading controls to manage agent memory. Because all three speak the same grammar, the same measure---semantic capacity, defined in Section~\ref{sec:metric}---can be applied to each, and the results can be compared fairly.
+
+The full formal grammar, including the exact bit layout of every field, is given in Appendix~\ref{app:ebnf} so that an independent team can reimplement it without reading our code.

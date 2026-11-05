@@ -1,0 +1,111 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{siunitx}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{pifont}
+
+\hypersetup{
+    pdftitle={Maximum Semantic Capacity via the Ontology of Optimal Information Structure},
+    pdfauthor={Ryan St Dare},
+    pdfsubject={cs.AI, cs.CL, cs.IT},
+    pdfkeywords={ontology, semantic capacity, knowledge graph encoding, visual glyph, Reed-Solomon, agent calibration, tiered context loading, reproducibility},
+}
+
+\geometry{margin=1in}
+
+\emergencystretch=2em
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red},
+    backgroundcolor=\color{gray!5},
+}
+
+\newtheorem*{definition}{Definition}
+
+\title{Maximum Semantic Capacity via the Ontology of Optimal Information Structure:\\
+       A Unified Framework Across Visual Encoding and Agent Calibration}
+
+\author{Ryan St Dare}
+\date{\today}
+\newcommand{\keywords}[1]{\par\addvspace\baselineskip\noindent\textbf{Keywords:} #1}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Information systems store, send, and reason over meaning at very different densities. A knowledge graph may need thousands of bytes to hold a few hundred facts. A language model may need thousands of words to hold a comparable set of facts. A software agent may need a long prompt to keep track of one decision. This paper argues that these are not separate problems. They are one problem. We call it \textbf{semantic capacity}: how much real meaning fits into each byte of data.
+
+The main cause of low semantic capacity is not a shortage of storage or speed. It is the lack of a clear \textit{structure} for meaning. Most formats, such as JSON and Markdown, were designed to be readable by people, not to pack meaning tightly. They repeat labels, punctuation, and instructions in every record. A small part of each record carries new meaning, and most of the bytes do not.
+
+We introduce \textbf{ONE} (Ontology of Optimal Information Structure), a unified framework that explains how information can be structured so that meaning is stored densely, checked for damage, and used by both people and machines. ONE has three parts. First, it defines a simple shared grammar called \textbf{O-OIS}. This grammar says what kinds of things can appear in information, what kinds of connections can join them, how certain each connection is, and when information should be loaded or stored. Second, it shows the same grammar in three different forms: a fixed-size visual code called \textbf{POINTS}, a large visual symbol collection called \textbf{65536}, and a small work-memory system for software agents called \textbf{MSCA}. Third, it defines a simple measure, \textbf{semantic capacity}, that counts how many bits of meaning fit in each byte.
+
+Across the POINTS test suite (94 tests plus 42 subtests) and a deliberate damage test, ONE achieves \textbf{9.7$\times$} the semantic density of compact JSON when a visual code is close to full. At that point, POINTS holds 460 entities in 8\,KB while JSON needs about 77.7\,KB for the same facts. The code can repair damage: Reed--Solomon parity restored every tested case with up to 32 damaged bytes. The agent memory system keeps its always-active rules to 621 tokens, well below a 640-token budget, and all 15 safety and quality checks pass. We release all code, test data, glyphs, and numbers so that others can repeat every measurement.
+\end{abstract}
+
+\keywords{ontology of information, semantic capacity, knowledge-graph encoding, visual glyph, Reed-Solomon, agent calibration, tiered context loading, reproducibility, POINTS, MSCA, 65536}
+
+\section{Introduction}
+\input{sections/01_introduction}
+
+\section{Related Work}
+\input{sections/02_related_work}
+
+\section{Ontology of Optimal Information Structure (O-OIS)}
+\input{sections/03_ontology}
+
+\section{Cross-Substrate Instantiation}
+\input{sections/04_instantiation}
+
+\section{Semantic-Capacity Metric}
+\input{sections/05_metric}
+
+\section{Experiments}
+\input{sections/06_experiments}
+
+\section{Agent-Context Study: Tiered Loading}
+\input{sections/07_agent_context}
+
+\section{Validation}
+\input{sections/08_validation}
+
+\section{Limitations and Future Work}
+\input{sections/09_limitations}
+
+\section{Conclusion}
+\input{sections/10_conclusion}
+
+\bibliographystyle{plain}
+\bibliography{bibliography}
+
+\appendix
+\section{Full O-OIS EBNF}
+\label{app:ebnf}
+\input{supplements/o_ois_ebnf}
+
+\section{Reproducibility Checklist}
+\label{app:repro}
+\input{supplements/reproducibility}
+
+\end{document}

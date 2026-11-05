@@ -1,0 +1,10 @@
+# Regenerable build cache only — never the frozen artifacts.
+# Kept: main.pdf (frozen v1), main.bbl (upload-record), main.log (build provenance).
+*.aux
+*.out
+*.fls
+*.fdb_latexmk
+*.blg
+*.synctex.gz
+*.toc
+*.run.xml

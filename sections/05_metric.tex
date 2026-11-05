@@ -1,0 +1,87 @@
+\label{sec:metric}
+
+We need one number that answers a plain question: \textit{how much real meaning does this representation carry per byte?}
+
+Older measures do not answer it. Shannon entropy~\cite{shannon1948mathematical} measures how surprising a message is. Kolmogorov complexity measures how short a program can make it. Both measure compressibility, not meaning. A file can compress well and still say very little.
+
+Semantic capacity (SC) is defined to measure meaning directly, in a way that any reader can check.
+
+\section*{5.1 Definition}
+
+Take a representation $R$ (such as a POINTS glyph or a JSON document) that encodes a knowledge graph $G$ (things plus connections). Then:
+
+\begin{equation}
+\text{SC}(R, G) = \frac{|\text{sem}(G)|}{|R|}
+\end{equation}
+
+Read it as: \textit{the amount of meaning in the graph, divided by the number of bytes used to store it.} The unit is \textit{bits of meaning per byte}.
+
+Two quantities must be explained: what counts as ``meaning'' ($|\text{sem}(G)|$), and what counts as a ``byte'' ($|R|$). The second is easy: it is the size of the representation in bytes. The first needs care.
+
+\section*{5.2 What counts as meaning: atomic facts}
+
+We count \textbf{atomic facts}---the smallest claims a reader can recover from the representation \textit{alone}, without outside help. If a competent reader (a person or a program) can extract a claim from $R$ without consulting any other source, that claim counts. If recovering the claim needs outside information, it does not count.
+
+\begin{definition}[Atomic facts in $G$]
+For a graph $G = (E, R, F, S, \mathcal{R})$, where $E$ is the set of entities, $R$ the set of edges, $F$ the facets, $S$ the salience entries, and $\mathcal{R}$ the reifications:
+\begin{itemize}
+\item Each entity $e \in E$ contributes two facts: its label (its name), and its short canonical identifier if it has one.
+\item Each edge contributes one fact: the six-field connection (source, target, relation kind, subtype, certainty, affirmed-or-denied).
+\item Each facet contributes one fact.
+\item Each salience entry contributes one fact.
+\item Each reification contributes one fact.
+\end{itemize}
+\end{definition}
+
+In symbols:
+
+\begin{equation}
+|\text{sem}(G)| = 10 \times \Bigl( \sum_{e \in E} (1 + \mathbb{1}[\text{cid}(e) \neq \varnothing]) + |R| + |F| + |S| + |\mathcal{R}| \Bigr)
+\end{equation}
+
+\textit{Example.} The graph with entities ``Sparrow'' and ``Bird'' and one edge ``Sparrow is a Bird'' contains: 2 labels + 2 short identifiers + 1 edge = 5 facts. At 10 bits per fact, $|\text{sem}(G)| = 50$ bits.
+
+\textit{Why 10 bits per fact?} Consider the fact ``Sparrow is a Bird.'' To distinguish it from the other facts a reader might expect, about $\log_2(\text{number of possibilities})$ bits are needed. For a small vocabulary, that is roughly 10 bits. We use 10 as a conservative, uniform value. The exact value does not affect the comparisons in this paper: every format is judged on the same graphs, so the same numerator is used and only the byte count differs. Ratios between formats are therefore unaffected by this choice.
+
+\section*{5.3 Comparison formats (baselines)}
+
+Every measurement compares the same graph stored in several formats:
+
+\begin{itemize}
+\item \textbf{POINTS}: the fixed-size glyph from Section~\ref{sec:instantiation}.
+\item \textbf{Compact JSON}: \texttt{json.dumps} with no extra spaces. JSON is included because it is the most common way to store structured data today.
+\item \textbf{Markdown}: a human-readable prose rendering of the same facts.
+\item \textbf{YAML}: a compact YAML rendering.
+\item \textbf{Token stream}: the JSON text split into tokens by a byte-pair encoder (the GPT-4 tokenizer), counting tokens as the cost.
+\item \textbf{Random bytes}: a control. Random data should score near zero, and it does.
+\end{itemize}
+
+Because every format encodes the \textit{same} graph, $|\text{sem}(G)|$ is identical for all of them. Only $|R|$ differs. Any difference in SC is therefore a difference in how efficiently each format stores the same meaning.
+
+\section*{5.4 Test conditions}
+
+Each pair of (format, graph) is tested in four conditions:
+
+\begin{enumerate}
+\item \textbf{Clean.} Encode the graph, decode it, and compare. The decoded graph must equal the original. This checks that the format is correct.
+\item \textbf{Corrupted.} Introduce 1, 4, 8, 16, or 32 random byte errors into the content region. For POINTS, check whether parity repairs the damage.
+\item \textbf{Truncated.} Cut the representation to 50\%, 25\%, or 10\% of its length. This checks how gracefully each format fails.
+\item \textbf{Adversarial.} Shuffle the entity order, substitute synonyms, or remove certainty marks. This checks whether the format still means what it meant.
+\end{enumerate}
+
+\section*{5.5 Statistical plan}
+
+\begin{itemize}
+\item \textbf{Corpus.} 30 graphs (5 sizes $\times$ 6 domains), drawn from the POINTS example set plus generated graphs.
+\item \textbf{Paired comparison.} For each graph, SC is compared pairwise (POINTS versus JSON, and so on). Pairing matters: both formats store the same facts, so the comparison is fair.
+\item \textbf{Effect size.} Cohen's $d$ with a 95\% confidence interval, so the reader can judge both the size and the reliability of each difference.
+\item \textbf{Multiple comparisons.} Bonferroni correction across the three forms.
+\item \textbf{Agreement between judges.} Two independent coders estimate $|\text{sem}(G)|$ for a sample of graphs, and Cohen's $\kappa$ reports how often they agree. (This coder study is planned; see Section~\ref{sec:limitations}.)
+\item \textbf{Repeatability.} Every number is produced twice and the two runs must agree exactly (run-twice-diff-zero).
+\end{itemize}
+
+\section*{5.6 What semantic capacity can and cannot tell us}
+
+\textbf{What it measures.} Propositional density: how many atomic claims fit into each byte. It is a property of the \textit{representation}.
+
+\textbf{What it does not measure.} Reasoning quality, inference speed, how fast a person can understand the data, or how efficiently a language model can use it. A dense representation may still be hard to reason with. SC is a tool for comparing storage formats, not a complete theory of understanding. Stating this limit clearly is part of the contribution.

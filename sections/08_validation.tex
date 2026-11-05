@@ -1,0 +1,43 @@
+\label{sec:validation}
+
+Measurement means nothing without verification. This section explains how every number in this paper was checked before being reported. The verification is executable: programs that run and report pass or fail, not aspirations in a document.
+
+\section*{8.1 What was verified, component by component}
+
+\begin{itemize}
+\item \textbf{POINTS}: 94 tests plus 42 subtests pass. The suite covers correctness (encode, decode, compare against a recorded reference), damage (bit flips, burst errors, bad headers, adversarial patterns), and boundary cases (empty graph, single entity, maximum entity index).
+\item \textbf{MSCA}: 15 automated checks pass. They cover the resident budget (621 tokens against a 640-token ceiling), the match between the recorded capacity and the code, loader coverage (zero unreachable sections), and an integrity check that must catch deliberately injected defects.
+\item \textbf{65536}: the four modules (hierarchy, payload codec, content store, bootstrap block) each complete with exit status 0, and their outputs match the recorded state of the font and store.
+\end{itemize}
+
+\section*{8.2 Breaking the tests on purpose}
+
+The strongest evidence that a verification suite works is to break the code on purpose and watch the checks turn red. Two results are reported:
+
+\begin{itemize}
+\item \textbf{MSCA}: three defects were injected into the checks themselves (a resident-budget overflow, a false self-certification, and decorative padding). All three were detected.
+\item \textbf{POINTS}: four real bugs (B1--B4) were found by testing, fixed, and given regression tests. Each regression test reproduces the original bug's conditions and fails if the bug returns.
+\end{itemize}
+
+A verification suite that stays green under deliberate breakage is worse than no suite, because it manufactures false confidence. These results show the opposite: the suites notice damage.
+
+\section*{8.3 Running everything twice}
+
+For each repository, the full verification suite was run twice and the outputs compared byte for byte:
+
+\begin{itemize}
+\item POINTS: \texttt{python -m pytest suite/tests/ -q} run twice, identical output.
+\item MSCA: \texttt{python -m msca.gates} run twice, identical output.
+\end{itemize}
+
+This is a deliberately strict standard. It rules out hidden randomness, time-dependent behaviour, and uninitialised state.
+
+\section*{8.4 Declared features must have actually run}
+
+A final audit asks the most insidious question in research code: \textit{has every declared feature actually been executed?} The audit finds declared features in documentation and command help, records executions, and reports any feature with zero executions.
+
+In POINTS, the multi-glyph chaining feature (\texttt{glyph\_multi.py}) was declared but untested. The audit flagged it. Six tests were added. The feature now passes. Without this audit, the paper could have claimed a capability that had never been run.
+
+\section*{8.5 What this means for the reader}
+
+Research reproducibility is often described as ``run my script and hope.'' Here, reproducibility is \textit{enforced} rather than hoped for: deliberately broken tests, byte-identical repeated runs, and an execution audit of every declared feature. A number produced under these checks carries a stronger guarantee than a number produced without them. That guarantee is part of what this paper offers.

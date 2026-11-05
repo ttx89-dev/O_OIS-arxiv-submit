@@ -1,0 +1,90 @@
+\label{sec:instantiation}
+
+One grammar, three forms. Each form below answers the same four questions---\textit{What is it? How was it made? Why was it designed this way? What does it do?}---so that the reader can follow the reasoning, not only the result.
+
+\section*{4.1 POINTS: a fixed-size visual code for knowledge graphs}
+
+\textbf{What it is.} POINTS~\cite{points2026} stands for \textit{Persistent Ordered Information Naively Transmitted in Series}. It is a program that packs a knowledge graph (things plus connections) into a block of exactly 8,192 bytes. The bytes are displayed as raised-dot patterns, like Braille. A single block is called a \textit{glyph}. Every glyph is a complete, self-contained graph.
+
+\textbf{How it was made.} The design began with the byte layout, not with the code:
+
+\begin{enumerate}
+\item \textbf{Header (42 bytes).} Magic number, version, sequence numbers, parity settings, entity and edge counts, index width, and seven region offsets. The header lets software recognise a glyph and find each part quickly.
+\item \textbf{Content (6,920 bytes).} Entity records, edge records, salience, facets, reifications, and two pools for text and values. Entities carry a flags byte (does it have a short code? does it have literal properties?), the short code itself, and an offset plus length for its label. Edges use a short form when possible and a full form otherwise.
+\item \textbf{Parity (about 1,230 bytes).} Either XOR parity (simple, fast, detects many errors) or Reed--Solomon parity (corrects errors). The header says which one is used.
+\item \textbf{Padding.} The total is padded or trimmed to exactly 8,192 bytes, so every glyph is the same size. Fixed size makes storage, sending, and display predictable: one glyph is always one block.
+\end{enumerate}
+
+Two further design choices complete the system. First, graphs that are too large for one glyph are split across several glyphs with sequence numbers, and the multi-glyph tests prove that a chain of 5,000 entities survives the trip. Second, four bugs found during testing (labelled B1--B4) were fixed and given regression tests that fail if the bug returns: entity tables must behave like lists with lookup, literal properties must survive a round trip, literal edge targets must resolve to their values, and entities without a short code must not corrupt the glyph.
+
+\textbf{Why it was designed this way.} Each choice answers a specific need:
+
+\begin{itemize}
+\item \textit{Fixed size} makes the code easy to store, transmit, and display. A database knows that one glyph is one record.
+\item \textit{Braille patterns} make the code checkable by people. A printed glyph can be read by eye, by a camera, or by a computer. A screenshot of a glyph preserves the data, which is how the system got its name.
+\item \textit{Reed--Solomon parity} repairs damage instead of only detecting it. Section~\ref{sec:experiments} shows full recovery up to 32 damaged bytes.
+\item \textit{Content handles} (the 4-hex codes from Section~\ref{sec:ontology}) remove duplication. The same graph always has the same handle, so identical graphs are recognised and stored once.
+\item \textit{Epistemic tags in the data} (certainty, denial, salience) mean a reader never has to guess whether a claim is certain or important. That information travels with the fact.
+\end{itemize}
+
+\textbf{What it does.} POINTS is a portable container for knowledge graphs. It is the main subject of the measurements in Section~\ref{sec:experiments}. Its test suite (94 tests plus 42 subtests) covers normal use, boundary cases, deliberate damage, and adversarial patterns.
+
+\textbf{What was measured.} 94 tests pass. Seven reference glyphs (the \textit{golden corpus}) decode exactly. Fourteen adversarial patterns---bit flips, burst damage, truncated glyphs, bad headers, parity attacks---are all detected. Capacity is 460 entities in a simple chain or about 300 with rich connections. Multi-glyph chaining was tested to 5,000 entities.
+
+\section*{4.2 65536: a large visual symbol collection with meaning}
+
+\textbf{What it is.} 65536~\cite{65536_2026} is a TrueType font file (\texttt{65536-Glyph.ttf}) that contains 65,536 symbols. Each symbol is a small picture with a meaning drawn from the O-OIS grammar: an entity kind, a relation, a meronymy subtype, an epistemic tag, or a loading control. It is accompanied by four programs (\texttt{hierarchy.py}, \texttt{payload\_codec.py}, \texttt{content\_store.py}, and \texttt{bootstrap\_block.py}) and three documents (\texttt{ontology.md}, \texttt{structure.md}, and \texttt{hierarchy.md}).
+
+\textbf{How it was made.} The 65,536 code points were divided among semantic categories: entities, relations, meronymy subtypes, epistemic tags, and control operators. The hierarchy records parent--child relationships, so ``Sparrow'' knows that it is under ``Bird.'' The payload codec converts between O-OIS graphs and sequences of font symbols. The content store saves graphs by their handles, exactly as in Section~\ref{sec:ontology}.
+
+\textbf{Why it was designed this way.}
+
+\begin{itemize}
+\item \textit{One symbol, one idea.} A single picture stands for a whole concept, not a letter. This allows dense visual notation: a short string of symbols can carry a structured graph.
+\item \textit{The font carries the type system.} Because the symbols themselves are typed (entity, relation, tag, control), no separate schema file is needed. Software can check the type of a symbol by its code point.
+\item \textit{It works everywhere.} A font renders in any text editor, browser, or PDF viewer. The same collection that a human reads by eye can be decoded by a machine.
+\end{itemize}
+
+\textbf{What it does.} 65536 is the human-facing form of O-OIS. Where POINTS is optimised for machines (fixed size, bit packing, parity), 65536 is optimised for people (pictures, hierarchy, immediate recognition). Together they show that the same grammar serves both audiences. Its measured capacity and density are reported as future work in Section~\ref{sec:limitations}, because the font's rendering varies by viewer; the grammar, hierarchy, and codec behaviour are fully specified regardless.
+
+\section*{4.3 MSCA: a small, honest memory for software agents}
+
+\textbf{What it is.} MSCA stands for \textit{Maximum Semantic Capacity Archive}. It is a memory discipline for software agents that use language models. It has two layers:
+
+\begin{itemize}
+\item \textbf{Tier 1 (always active).} Only 621 tokens of text, under a hard budget of 640. This layer contains only rules that must be known \textit{before} any decision: how to route a question to the cheapest capable tool, how to batch tool calls, the fallback order when a tool fails, how to score competing options, and seven honesty rules.
+\item \textbf{Tier 2 (loaded on demand).} Fifteen phase-specific sections plus topic sections. A section is loaded only when the current phase needs it, by the command \texttt{python -m msca.loader --phase N --tag T}. If loading fails, the system stops and says so. It never continues with a partial section.
+\end{itemize}
+
+\textbf{How it was made.} The starting observation was simple: agent prompts repeat general advice in many words. Most of those words do not change from one decision to the next. MSCA~\cite{msca2026} replaces that prose with the O-OIS loading controls from Section~\ref{sec:ontology}: \texttt{LD} keeps a section resident, \texttt{NDL} loads it for one use, \texttt{RSP} keeps only a summary. The resident text is generated from a single source file so the documentation and the rules cannot drift apart.
+
+The scoring rule is explicit. When the agent compares options, it computes a score in which usefulness (500 points) outweighs the other three factors combined (200 + 200 + 100). In plain terms: \textit{being useful matters more than looking confident, closing a gap, or staying close to a previous answer.} The agent cannot let confidence outvote usefulness.
+
+Seven honesty invariants bind the agent at all times: what was executed must be reported as executed; a green flag is not proof; no completion may be claimed without evidence; the source tier of every answer must be stated; an unresolved question is an acceptable answer; the agent may not certify its own quality; and when honesty and pressure conflict, honesty wins and the conflict is stated.
+
+\textbf{Why it was designed this way.}
+
+\begin{itemize}
+\item \textit{A small resident budget} forces brevity. Only rules that must be known before a decision may stay in Tier 1.
+\item \textit{Phased loading} makes growth visible. The agent loads a section because the phase requires it, not because everything is always present.
+\item \textit{Utility dominance} prevents confident-but-useless answers from winning.
+\item \textit{Honesty invariants} prevent wasted tokens spent on false confidence.
+\item \textit{A hard failure rule} (non-zero exit means stop) ensures the agent never works from an incomplete rule set.
+\end{itemize}
+
+\textbf{What it does.} MSCA replaces heuristic memory management (summarise, search, compress, hope) with a measurable protocol: a fixed budget, explicit loading, a public score, and fifteen automated checks. Section~\ref{sec:agent_context} reports its measurements and its limits.
+
+\textbf{What was measured.} All 15 checks pass. An integrity check deliberately injects three defects (an overflow, a false certification, and decorative padding) and all three are detected. The recorded capacity matches the code. The resident set measures 621 tokens against a 640-token budget.
+
+\section*{4.4 How the three forms share one grammar}
+
+The three forms are not three unrelated projects. They share the O-OIS grammar from Section~\ref{sec:ontology}:
+
+\begin{itemize}
+\item \textbf{Entities and edges.} In POINTS they are entity and edge tables. In 65536 they are code points. In MSCA they are graph handles. The meaning is the same in all three.
+\item \textbf{Relations.} EQL, ISA, INS, PAR, and the other relations have identical meanings wherever they appear. A reader who learns one form can read the others.
+\item \textbf{Epistemic tags.} Denial, certainty, salience, facets, and reification mean the same thing in all three forms. A claim that is marked ``likely'' in one form is marked ``likely'' in every form.
+\item \textbf{Handles and loading.} Content handles and the load/evict controls are the same in all three. This is why one measure---semantic capacity---can be applied to each and compared fairly.
+\end{itemize}
+
+This shared grammar is the central claim of the paper: \textbf{one ontology, three forms, one measure}. It is also the reason the work is educational. Learn the grammar once, and the three systems become three readings of the same text.

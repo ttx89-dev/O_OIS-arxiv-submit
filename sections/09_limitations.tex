@@ -1,0 +1,46 @@
+\label{sec:limitations}
+
+A result is only as trustworthy as its stated limits. This section lists every important limit in plain language. Nothing here is hidden; each item says what is not claimed.
+
+\section*{9.1 ``Optimal'' is a direction, not a trophy}
+
+O-OIS is \textbf{not} proved to be the best possible structure for all purposes and all time. Two classic results explain why such a proof is impossible in principle. Tarski showed that a formal system cannot fully define its own truth predicate from within. Gödel showed that a sufficiently rich formal system cannot prove its own consistency from within. A system therefore cannot prove its own global optimality from within either.
+
+We claim something narrower and defensible:
+
+\begin{itemize}
+\item \textbf{Structural completeness.} O-OIS addresses every known failure mode of the codecs it improves on (the four bugs B1--B4).
+\item \textbf{Comparative quality.} Among carefully characterised alternatives, O-OIS is the best we know for maximising meaning per byte under the stated constraints (fixed size, repairable, human-checkable), as of November 2026.
+\item \textbf{An expiry date.} The claim is indexed to a knowledge horizon and expires on 22 December 2026. After that date, it must be re-verified before it is relied upon.
+\end{itemize}
+
+Readers should treat ``optimal'' throughout this paper as shorthand for that narrower claim.
+
+\section*{9.2 Limits of the semantic-capacity measure}
+
+\begin{itemize}
+\item \textbf{The 10-bits-per-fact assumption.} Real facts differ in how much information they carry. We use a uniform 10 bits for simplicity. If the true value were 5 bits, every SC number would halve; if 20 bits, every number would double. The \textit{ratios} between formats do not change, because every format is judged on the same graphs. Absolute SC values should therefore be read with that assumption in mind.
+\item \textbf{Who counts the facts.} $|\text{sem}(G)|$ is estimated by counting facts a competent reader can recover. Human judgement is involved. Two independent coders have not yet been compared (Cohen's $\kappa$ is planned work). Until that study is done, SC values carry coder-judgement uncertainty.
+\item \textbf{Density is not understanding.} SC measures how much meaning is stored per byte. It does not measure how well a system reasons, how fast a person understands the data, or how effectively a language model uses it. A dense code can still be hard to think with.
+\end{itemize}
+
+\section*{9.3 Limits of each form}
+
+\begin{itemize}
+\item \textbf{POINTS} has a fixed size. One glyph holds at most about 460 entities in a simple chain, or about 300 with rich connections. Larger graphs need several glyphs, paying one header per extra glyph.
+\item \textbf{65536} depends on font rendering. Not every viewer displays all 65,536 symbols correctly. The grammar, hierarchy, and codec are fully specified regardless of rendering, but visual density measurements will vary by viewer.
+\item \textbf{MSCA} is a text-and-context system, not a byte codec. Comparing its SC with POINTS requires converting tokens to bytes (about 4 characters per token), which is approximate.
+\end{itemize}
+
+\section*{9.4 A separate project is not included}
+
+The TWO framework (Earth 100\% sustainable: carbon, biochar, and related materials processes) is a separate thesis about the physical world. It answers a different question. Including it here would dilute both papers. TWO will be presented separately.
+
+\section*{9.5 Future work}
+
+\begin{enumerate}
+\item \textbf{Standardise the SC measure.} Run the two-coder agreement study ($\kappa$), test on 1,000 or more graphs, and automate fact extraction with a language model.
+\item \textbf{Larger evaluations.} Measure 65536 density against Unicode and JSON. Test MSCA against flat memory on 50 or more task domains.
+\item \textbf{Hardware acceleration.} Implement POINTS encoding and decoding on SIMD or GPU hardware (the current implementation is pure Python).
+\item \textbf{Standardisation.} Propose O-OIS to the W3C and IANA as a registered media type (\texttt{application/points+glyph}), so that other teams can implement it independently.
+\end{enumerate}

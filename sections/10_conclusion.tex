@@ -1,0 +1,61 @@
+\label{sec:conclusion}
+
+This paper asked a simple question: \textit{how much real meaning can fit into each byte of information, and what structure makes that possible?} The answer is a shared grammar, three forms of it, and a measure.
+
+\section*{10.1 What was built}
+
+\begin{enumerate}
+\item \textbf{O-OIS}, a shared grammar for information structure. It defines what things (entities) may appear, how they connect (twelve relations), how parts belong to wholes (six meronymy subtypes), how certain and important each claim is (five epistemic tags), which point of view each fact belongs to (facets and salience), and when information should be kept close or stored far away (loading controls). The full formal rules are in Appendix~\ref{app:ebnf}.
+\item \textbf{Three forms of the same grammar:}
+\begin{itemize}
+\item \textbf{POINTS}, a fixed-size visual code (8,192 bytes, Braille patterns) that any person, camera, or computer can read and that repairs its own damage.
+\item \textbf{65536}, a collection of 65,536 meaningful symbols (a font) that shows the same grammar as a visual language.
+\item \textbf{MSCA}, a small memory discipline for software agents: 621 always-active tokens under a 640-token budget, with the rest loaded only when needed, and a scoring rule that makes usefulness outrank confidence.
+\end{itemize}
+\item \textbf{Semantic capacity (SC)}, a measure of bits of meaning per byte, defined so that any reader can check it.
+\end{enumerate}
+
+\section*{10.2 What was measured}
+
+\begin{itemize}
+\item \textbf{Crossover.} For tiny graphs, JSON is denser because POINTS always uses a full glyph. At about 50 entities, POINTS overtakes JSON.
+\item \textbf{At capacity (460 entities).} POINTS holds 4.48 bits of meaning per byte; JSON holds 0.46. That is a \textbf{9.7$\times$} advantage, and the same facts occupy 8\,KB instead of 77.7\,KB.
+\item \textbf{Rich graphs (300 entities with facets and salience).} POINTS holds 2.99 bits per byte; JSON holds 0.45. That is a \textbf{6.6$\times$} advantage.
+\item \textbf{Damage repair.} Reed--Solomon parity restored every tested case with up to 32 damaged bytes.
+\item \textbf{Tests.} POINTS: 94 tests plus 42 subtests pass. Deliberate breaks were injected into the suite, and every break was caught.
+\item \textbf{Agent memory.} Tiered loading packs about six times more recoverable meaning into the same token budget than flat memory, on the task tested. All 15 checks pass.
+\end{itemize}
+
+\section*{10.3 What is honestly claimed}
+
+\begin{itemize}
+\item ``Optimal'' means the best carefully characterised structure for the stated purpose and limits, as of November 2026---not a proof of perfection.
+\item SC numbers assume 10 bits per atomic fact. Ratios between formats do not depend on that assumption; absolute values do.
+\item The agent-memory study used one task and agent self-reports, not two independent coders.
+\item The TWO sustainability thesis is a separate paper.
+\end{itemize}
+
+\section*{10.4 What is released}
+
+All code, example glyphs, test suites, and raw numbers are public:
+
+\begin{itemize}
+\item POINTS: \url{https://github.com/ttx89-dev/POINTS}
+\item 65536: \url{https://github.com/ttx89-dev/65536}
+\item MSCA: \url{https://github.com/ttx89-dev/MSCA}
+\end{itemize}
+
+Every table and figure can be regenerated from these repositories. Appendix~\ref{app:repro} gives the exact commands.
+
+\section*{10.5 Closing}
+
+For fifty years, computing has optimised bandwidth, storage, and speed. The meaning in each byte has barely changed. This paper shows that the missing lever is structure. A single grammar, written once and used three ways, raises semantic density by almost an order of magnitude while adding damage repair, human checkability, and agent honesty. The work is measured, tested, and repeatable.
+
+We invite the community to use the grammar, to challenge the measure, and to build the fourth form.
+
+\vspace{1em}
+\noindent\textbf{Disclosure block.}
+\begin{verbatim}
+LOADED     <G:points> <G:msca> <G:65536>
+NOT LOADED (all further handles: outside this paper's scope)
+\end{verbatim}

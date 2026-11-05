@@ -1,0 +1,62 @@
+\label{sec:related}
+
+ONE stands at the meeting point of four older lines of work. This section explains each line in plain language and shows where ONE is new.
+
+\section*{2.1 Knowledge-graph encoding: how facts are stored on disk}
+
+A knowledge graph is a list of things and the connections between them. For example: ``Sparrow \textit{is a} Bird'' and ``Bird \textit{can fly}.''
+
+Common text formats~\cite{rdf2014,jsonld2014}---RDF/XML, Turtle, JSON-LD, and N-Triples---were designed so that people and web tools can read them easily. That readability costs space: labels and punctuation are repeated for every fact.
+
+Compact binary formats~\cite{protobuf2023,msgpack2023}---Protocol Buffers, MessagePack, CBOR, and FlatBuffers---save space. But they do not carry the extra information ONE needs: how certain is each connection, is it affirmed or denied, how important is it, and can damage be repaired?
+
+Graph-specific libraries such as GraphBLAS and WebGraph are optimised for fast traversal (following connections quickly), not for packing meaning into few bytes.
+
+POINTS is different in four ways. It uses a fixed size. It can repair damage. A person can check it by eye. And every connection carries its own certainty and importance. The rest of this paper explains how.
+
+\section*{2.2 Ontology design: how kinds of things are described}
+
+An ontology is a careful list of the kinds of things in a domain and how they relate. Large philosophical ontologies such as BFO, DOLCE, and SUMO are precise, but they are hard to use in code and they were not designed for dense storage.
+
+Smaller web ontologies such as SKOS, Schema.org, and OWL-RL are easier to use, but they give up some precision to stay manageable.
+
+O-OIS takes a different path. It is a \textit{working} ontology. Every idea in it---every kind of connection, every way a part can belong to a whole, every certainty mark---maps directly to a small field of bits in the POINTS code. The ontology is therefore not only a description. It is also the code itself. Section~\ref{sec:ontology} teaches each idea with a short example.
+
+\section*{2.3 Agent context management: how software agents remember}
+
+A software agent that uses a language model receives a ``context'' of words on every step. Common frameworks~\cite{langchain2023,autogpt2023,yao2023react}---LangChain, AutoGPT, ReAct, Voyager, and Generative Agents---treat this context as one long, flat window. When it grows too large, they summarise old parts, search for relevant parts, or compress the text. These methods help, but they are hard to measure and hard to test.
+
+MSCA treats memory in two layers. A tiny set of rules is always present. Everything else is loaded only when the current phase needs it, and removed when it does not. The size of the always-present layer has a hard budget (640 tokens). Whether a rule set is kept or loaded is decided by an explicit score, not by hope. Section~\ref{sec:agent_context} explains this in detail and reports the measurements.
+
+\section*{2.4 Visual encoding: information you can see}
+
+QR codes~\cite{qrcode1994}, DataMatrix codes~\cite{datamatrix1995}, and Aztec codes store data in pictures. Braille~\cite{braille1829} stores language in raised dots. These systems show that a picture can carry data and survive copying as an image.
+
+POINTS uses Braille-like dots for a different reason. The dots make the code \textit{checkable by people}. A printed glyph can be examined by eye, photographed, or read by a computer. The 65536 collection generalises the idea: instead of dots, each meaning has its own picture, like a very large alphabet where every symbol is a whole idea.
+
+\section*{2.5 Semantic density measures: counting meaning, not just bytes}
+
+Information theory gives us Shannon entropy~\cite{shannon1948mathematical} (how surprising a message is) and Kolmogorov complexity (how short a program can make it). Both measure compressibility, not meaning. A file can compress well and still say little.
+
+No earlier work we are aware of defines a simple cross-format measure of \textit{bits of meaning per byte}. Section~\ref{sec:metric} defines semantic capacity (SC) for that purpose. It is deliberately simple: count the atomic facts that a competent reader can recover from the representation alone, assign each a conservative 10 bits, and divide by the number of bytes. The section states exactly what this number can and cannot tell us.
+
+\section*{2.6 Summary: where ONE is new}
+
+\begin{table}[ht]
+\caption{Positioning of ONE compared with related systems. A tick means the system provides that feature.}
+\label{tab:positioning}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lccccc}
+\toprule
+System & Fixed size & Repair & Certainty tags & Tiered memory & SC measure \\
+\midrule
+JSON / MessagePack & \xmark & \xmark & \xmark & \xmark & \xmark \\
+Protocol Buffers & \xmark & \xmark & \xmark & \xmark & \xmark \\
+RDF / JSON-LD & \xmark & \xmark & \cmark\ (limited) & \xmark & \xmark \\
+LangChain / AutoGPT & \xmark & \xmark & \xmark & \xmark\ (heuristic) & \xmark \\
+QR / DataMatrix & \cmark & \cmark\ (RS) & \xmark & \xmark & \xmark \\
+\textbf{ONE (this work)} & \cmark & \cmark\ (RS/XOR) & \cmark\ & \cmark\ (MSCA) & \cmark\ (SC) \\
+\bottomrule
+\end{tabular}
+\end{table}

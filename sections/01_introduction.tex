@@ -1,0 +1,53 @@
+\label{sec:introduction}
+
+\section*{1.1 The problem in plain language}
+
+Imagine that you must send a list of facts to a friend on a small card. You have two ways to do it. In the first way, you write every fact in long sentences, with repeated labels and punctuation. In the second way, you agree on a short code first: each thing gets a number, each kind of connection gets a sign, and the card holds only the numbers and signs. The second card holds far more facts.
+
+That is the difference this paper studies.
+
+Modern information systems mostly use the first way. JSON, for example, is useful because people can read it. But for every fact it repeats field names, brackets, commas, and quotes. The Software agent prompts used by language models do something similar: they repeat general instructions and reminders in many words, even though only a few words change from one decision to the next. The result is \textbf{semantic sparsity}: most of the stored data does not add new meaning.
+
+The question is simple. \textit{How much real meaning can we fit into one byte of data, and what structure makes that possible?}
+
+\section*{1.2 What this paper does}
+
+This paper introduces \textbf{ONE}, a shared way to describe information so that meaning is packed densely. ONE is not one program. It is one idea shown in three forms, plus a way to measure the gain.
+
+ONE makes three contributions:
+
+\begin{enumerate}
+\item \textbf{A shared grammar, called O-OIS.} O-OIS is a small set of rules that say: what things (entities) may appear, how things may be connected (relations), how parts may belong to a whole (meronymy), how sure we are about each connection (epistemic tags), and when information should be kept in short-term memory or moved to storage (loading controls). Appendix~\ref{app:ebnf} gives the full formal rules in a standard notation called EBNF. Section~\ref{sec:ontology} explains every part in plain language.
+
+\item \textbf{The same grammar in three forms.} Section~\ref{sec:instantiation} explains each form, what it does, why it was chosen, and how it was built:
+\begin{itemize}
+\item \textbf{POINTS} is a fixed-size visual code. A whole knowledge graph is packed into exactly 8,192 bytes, shown with raised-dot patterns like Braille. It can be read by a person, by a camera, or by a computer, and it can repair damage.
+\item \textbf{65536} is a large collection of symbols, like a font with 65,536 meaningful pictures. Each picture stands for one idea, category, or connection. It shows that the same grammar can work as a visual language.
+\item \textbf{MSCA} is a small memory discipline for software agents. It keeps only the most important rules always active (621 tokens, within a 640-token budget) and loads the rest only when needed. It shows that the same grammar can make agent memory smaller and more honest.
+\end{itemize}
+
+\item \textbf{A simple measure, called semantic capacity (SC).} SC counts how many bits of meaning fit in each byte. Section~\ref{sec:metric} defines it carefully, explains what it counts, and states clearly what it does not count. Section~\ref{sec:experiments} reports the measurements.
+\end{enumerate}
+
+We test ONE on a fixed example set of seven small graphs, on graphs that grow from 1 to 460 entities, on a rich graph with 300 entities plus extra details, and on deliberately damaged codes. The main results are:
+
+\begin{itemize}
+\item \textbf{Crossover.} For very small graphs, JSON is more compact because POINTS always uses a full 8,192 bytes. Once a graph has about 50 entities, POINTS becomes denser. At 460 entities, POINTS holds 4.48 bits of meaning per byte and JSON holds 0.46---a \textbf{9.7$\times$} advantage (Table~\ref{tab:capacity_sweep}).
+\item \textbf{Rich graphs.} With 300 entities, 299 connections, 30 facets, and 30 salience notes, POINTS holds 2.99 bits per byte and JSON holds 0.45---a \textbf{6.6$\times$} advantage (Table~\ref{tab:rich_graph}).
+\item \textbf{Damage repair.} Reed--Solomon parity restored every tested case with up to 32 damaged bytes (Table~\ref{tab:rs_recovery}).
+\item \textbf{Tests.} POINTS: 94 tests plus 42 subtests pass. MSCA: 15 of 15 checks pass. In each case, tests were also broken on purpose to prove they would notice damage.
+\end{itemize}
+
+\section*{1.3 What ``optimal'' means here}
+
+The title uses the word \textit{optimal}. We must explain what that word means, because it can be misunderstood.
+
+In this paper, \textit{optimal} does not mean ``proved perfect for all time.'' No human-made code can prove that. It means: \textit{the best carefully characterised structure we know for this stated purpose, with the stated limits, as of the stated date.} The purpose is to maximise meaning per byte while keeping the code fixed-size, repairable, and understandable to people. The limits are stated in Section~\ref{sec:limitations}. This honest use of the word follows philosophers such as Kant, who called such a target a \textit{regulative ideal}: a direction to aim for, not a claim of arrival.
+
+\section*{1.4 What this paper does not do}
+
+A second project, called TWO, concerns whether the Earth can be made fully sustainable through carbon, biochar, and related materials processes. That project is important, but it is a different question about the physical world. It is not part of this paper, and it is mentioned only to avoid confusion.
+
+\section*{Paper Structure}
+
+Section~\ref{sec:related} explains how ONE differs from existing formats and systems. Section~\ref{sec:ontology} teaches the shared grammar, part by part, with examples. Section~\ref{sec:instantiation} explains the three forms and why each design choice was made. Section~\ref{sec:metric} defines semantic capacity and its limits. Section~\ref{sec:experiments} reports what was measured and how to read the tables. Section~\ref{sec:agent_context} explains the agent memory study. Section~\ref{sec:validation} explains how every reported number was verified. Section~\ref{sec:limitations} states every important limit in plain language. Section~\ref{sec:conclusion} summarises what was learned.

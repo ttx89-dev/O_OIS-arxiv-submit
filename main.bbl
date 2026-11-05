@@ -1,0 +1,87 @@
+\begin{thebibliography}{10}
+
+\bibitem{braille1829}
+Louis Braille.
+\newblock Proc{\'e}d{\'e} pour {\'e}crire les mots, la musique et le
+  plain-chant au moyen de points.
+\newblock 1829.
+\newblock Original Braille 2x3 cell system.
+
+\bibitem{langchain2023}
+Harrison Chase.
+\newblock Langchain: Building applications with llms through composability.
+\newblock \url{https://langchain.com/}, 2023.
+
+\bibitem{rdf2014}
+Richard Cyganiak, David Wood, and Markus Lanthaler.
+\newblock Rdf 1.1 concepts and abstract syntax.
+\newblock W3C Recommendation, 2014.
+
+\bibitem{65536_2026}
+Ryan~St Dare.
+\newblock 65536: Font and ontology for visual knowledge representation.
+\newblock \url{https://github.com/ttx89-dev/65536}, 2026.
+\newblock 65536-glyph TrueType font, hierarchy, payload codec, content store.
+
+\bibitem{msca2026}
+Ryan~St Dare.
+\newblock Msca: Maximum semantic capacity archive.
+\newblock \url{https://github.com/ttx89-dev/MSCA}, 2026.
+\newblock 15 phase sections, utility-dominance (500/200/200/100), 15 automated
+  checks.
+
+\bibitem{points2026}
+Ryan~St Dare.
+\newblock Points: Visual encoding glyph codec.
+\newblock \url{https://github.com/ttx89-dev/POINTS}, 2026.
+\newblock 94 tests, RS(255,223), 8192-byte fixed-width Braille glyphs.
+
+\bibitem{protobuf2023}
+Google.
+\newblock Protocol buffers: Language-neutral, platform-neutral extensible
+  mechanism for serializing structured data.
+\newblock \url{https://protobuf.dev/}, 2023.
+
+\bibitem{autogpt2023}
+Significant Gravitas.
+\newblock Autogpt: An autonomous gpt-4 experiment.
+\newblock \url{https://github.com/Significant-Gravitas/AutoGPT}, 2023.
+
+\bibitem{datamatrix1995}
+Inc. International Data~Matrix.
+\newblock Data matrix: A two-dimensional matrix symbol, 1995.
+\newblock ISO/IEC 16022.
+
+\bibitem{msgpack2023}
+MessagePack Project.
+\newblock Messagepack: Efficient binary serialization format.
+\newblock \url{https://msgpack.org/}, 2023.
+
+\bibitem{reed1960polynomial}
+Irving~S. Reed and Gustave Solomon.
+\newblock Polynomial codes over certain finite fields.
+\newblock {\em Journal of the Society for Industrial and Applied Mathematics},
+  8(2):300--304, 1960.
+
+\bibitem{shannon1948mathematical}
+Claude~E. Shannon.
+\newblock A mathematical theory of communication.
+\newblock {\em Bell System Technical Journal}, 27(3):379--423, 1948.
+
+\bibitem{jsonld2014}
+Manu Sporny, Gregg Kellogg, and Markus Lanthaler.
+\newblock Json-ld 1.0: A json-based serialization for linked data.
+\newblock W3C Recommendation, 2014.
+
+\bibitem{qrcode1994}
+Denso Wave.
+\newblock Qr code: A two-dimensional code, 1994.
+\newblock ISO/IEC 18004.
+
+\bibitem{yao2023react}
+Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan,
+  and Yuan Cao.
+\newblock React: Synergizing reasoning and acting in language models.
+\newblock {\em arXiv preprint arXiv:2210.03629}, 2022.
+
+\end{thebibliography}
