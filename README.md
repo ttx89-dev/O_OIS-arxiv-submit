@@ -1,5 +1,7 @@
 # README — arXiv v1 submission package
 
+ENDORSEMENT REQUEST: https://arxiv.org/auth/endorse?x=3RGEYX
+
 **Status:** v1 frozen and verified 2026-11-05. Nothing submitted yet —
 remaining owner-side actions are in `SUBMISSION.md`; the version ledger and
 update policy are in `VERSIONS.md`.
